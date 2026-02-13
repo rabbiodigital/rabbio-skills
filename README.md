@@ -9,6 +9,7 @@ Skills rozširujú schopnosti AI agenta v Cursor IDE o špecializované workflow
 | Skill | Popis |
 |-------|-------|
 | [web-hosting-migration](./web-hosting-migration/) | Migrácia webov medzi hostingami (PHP, Laravel, WordPress, static) |
+| [session-end](./session-end/) | Vytvára development log záznam na konci pracovnej session |
 
 ## Inštalácia
 
@@ -42,6 +43,7 @@ git clone https://github.com/rabbiodigital/rabbio-skills.git ~/rabbio-skills
 
 # Symlink konkrétneho skillu
 ln -s ~/rabbio-skills/web-hosting-migration ~/.cursor/skills/web-hosting-migration
+ln -s ~/rabbio-skills/session-end ~/.cursor/skills/session-end
 ```
 
 ## Štruktúra skillu
