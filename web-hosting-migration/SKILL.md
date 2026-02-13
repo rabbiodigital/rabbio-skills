@@ -44,10 +44,34 @@ Task Progress:
 
 ## Krok 1: Pripojenie na zdrojový server
 
+### DÔLEŽITÉ: Diagnostický postup pri SSH zlyhaniach
+Vždy použi `-v` (verbose) flag na diagnostiku:
+```bash
+ssh -v -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i /path/to/key -p PORT user@host "echo OK" 2>&1 | tail -20
+```
+
+Kľúčové riadky na sledovanie:
+- `Server accepts key` → kľúč je OK, problém je passphrase alebo oprávnenia
+- `Offering public key ... explicit` → kľúč sa ponúka serveru
+- `Authentications that can continue` → server kľúč odmietol
+- `read_passphrase: can't open /dev/tty` → kľúč vyžaduje passphrase, neinteraktívne prostredie
+
 ### SSH kľúč
 Ak kľúč z cPanel:
 - Overiť autorizáciu verejného kľúča (cPanel → SSH Access → Manage → Authorize)
-- Kľúč môže byť zašifrovaný passphrase → pridať do ssh-agent:
+- **Overiť oprávnenia kľúča** – musia byť `600` (súbor) a `700` (adresár):
+```bash
+chmod 700 /path/to/key_directory
+chmod 600 /path/to/key_directory/id_rsa
+```
+- **Pozor:** Používateľ môže uviesť cestu ku kľúču, ale reálne to je adresár obsahujúci `id_rsa`. Vždy overiť:
+```bash
+ls -la /path/to/key  # Je to súbor alebo adresár?
+```
+
+### SSH kľúč s passphrase (KRITICKÉ pre neinteraktívne prostredie)
+Cursor shell nemá prístup k `/dev/tty` – nemôže interaktívne zadať passphrase.
+**Jediné riešenie:** Použiť `expect` + `ssh-agent`:
 
 ```bash
 eval "$(ssh-agent -s)"
@@ -57,7 +81,15 @@ expect "Enter passphrase"
 send "PASSPHRASE\r"
 expect eof
 '
+# Overenie
+ssh-add -l
 ```
+
+**Poznámky:**
+- Passphrase je často rovnaké ako SSH heslo poskytnuté používateľom
+- Po pridaní do agenta všetky SSH/SCP príkazy v tej istej shell session fungujú automaticky
+- `ssh-agent` platí len pre aktuálnu shell session – ak sa session zmení, treba znova
+- NIKDY sa nevzdávaj pri passphrase – vždy použi `expect`, nefallbackuj na manuálny postup
 
 ### SSH s heslom
 Nainštalovať sshpass (ak nie je):
@@ -66,8 +98,9 @@ brew install hudochenkov/sshpass/sshpass
 ```
 Potom:
 ```bash
-sshpass -p 'HESLO' ssh -o StrictHostKeyChecking=no -p PORT user@host "command"
+sshpass -p 'HESLO' ssh -T -o StrictHostKeyChecking=no -p PORT user@host "command"
 ```
+**Poznámka:** Vždy použi `-T` flag (no pseudo-terminal) pri `sshpass` v neinteraktívnom prostredí.
 
 ### Overenie pripojenia
 ```bash
@@ -152,8 +185,13 @@ scp -P PORT user@host:~/web_backup.tar.gz /local/project/backup/
 sshpass -p 'HESLO' scp -P PORT /local/project/backup/web_backup.tar.gz user@host:~/
 sshpass -p 'HESLO' scp -P PORT /local/project/backup/backup.sql user@host:~/
 
-# Rozbalenie do document root
-sshpass -p 'HESLO' ssh -p PORT user@host "cd ~ && tar xzf web_backup.tar.gz"
+# Rozbalenie do document root s automatickou detekciou štruktúry archívu
+sshpass -p 'HESLO' ssh -p PORT user@host "cd ~/DOCROOT && \
+  if tar tzf ~/web_backup.tar.gz | head -1 | grep -q 'public_html'; then \
+    tar xzf ~/web_backup.tar.gz -C . --strip-components=1; \
+  else \
+    tar xzf ~/web_backup.tar.gz -C .; \
+  fi"
 ```
 
 **DÔLEŽITÉ:** Zisti document root na cieľovom serveri:
@@ -161,12 +199,21 @@ sshpass -p 'HESLO' ssh -p PORT user@host "cd ~ && tar xzf web_backup.tar.gz"
 - Wedos: `~/www/`  
 - cPanel hostingy: `~/public_html/`
 
-Presunúť súbory do správneho document root.
+**Poznámka:** Archív z cPanel hostingov typicky obsahuje `public_html/` adresár.
+Použiť `--strip-components=1` ak rozbaľujeme do iného document root.
 
 ## Krok 7: Import databázy
 
 ```bash
 mysql -h DB_HOST -P DB_PORT -u DB_USER -p'DB_PASS' DB_NAME < ~/backup.sql
+```
+
+**Ak heslo obsahuje špeciálne znaky** (`&`, `;`, `<`, `>`, `|`, `!`, `$`):
+```bash
+# Použiť MYSQL_PWD environment premennú namiesto -p
+export MYSQL_PWD='heslo_so_specialnymi_znakmi'
+mysql -h DB_HOST -u DB_USER DB_NAME < ~/backup.sql
+unset MYSQL_PWD
 ```
 
 Overiť:
@@ -194,10 +241,19 @@ Editovať hodnoty priamo v PHP poliach pomocou sed alebo priameho editovania.
 
 **WordPress (wp-config.php):**
 ```bash
-sed -i "s/define('DB_NAME', '.*')/define('DB_NAME', 'NOVA_DB')/" wp-config.php
-sed -i "s/define('DB_USER', '.*')/define('DB_USER', 'NOVY_USER')/" wp-config.php
-sed -i "s/define('DB_PASSWORD', '.*')/define('DB_PASSWORD', 'NOVE_HESLO')/" wp-config.php
-sed -i "s/define('DB_HOST', '.*')/define('DB_HOST', 'NOVY_HOST')/" wp-config.php
+# Použiť | ako delimiter v sed (heslo môže obsahovať / a iné znaky)
+sed -i "s|define( 'DB_NAME', '.*' );|define( 'DB_NAME', 'NOVA_DB' );|" wp-config.php
+sed -i "s|define( 'DB_USER', '.*' );|define( 'DB_USER', 'NOVY_USER' );|" wp-config.php
+sed -i "s|define( 'DB_PASSWORD', '.*' );|define( 'DB_PASSWORD', 'NOVE_HESLO' );|" wp-config.php
+sed -i "s|define( 'DB_HOST', '.*' );|define( 'DB_HOST', 'NOVY_HOST' );|" wp-config.php
+```
+
+**WordPress - opraviť hardcoded cesty:**
+```bash
+# Pluginy ako AIOWPSEC majú hardcoded cesty v wp-config.php
+# Hľadať cesty so starým document root a nahradiť
+grep -n '/home/STARY_USER/public_html/' wp-config.php
+# Ak nájdené, nahradiť relatívnou cestou alebo novým document root
 ```
 
 **WordPress - URL zmena v DB** (ak sa mení doména):

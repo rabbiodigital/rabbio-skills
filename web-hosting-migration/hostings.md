@@ -5,7 +5,7 @@
 | Parameter | Hodnota |
 |-----------|---------|
 | SSH host | `shell.rX.websupport.sk` (X = číslo clustra) |
-| SSH port | Neštandardný (napr. 27229) - zistiť v dashboarde |
+| SSH port | Neštandardný (napr. 27229, 27376) - zistiť v dashboarde |
 | Document root | `~/domena.sk/web/` |
 | DB host | `db.rX.websupport.sk` |
 | DB port | 3306 |
@@ -14,11 +14,16 @@
 | Shell timeout | Konzola sa deaktivuje po 60 minútach - treba aktivovať v dashboarde |
 | Autentifikácia | Len heslo (SSH kľúč nie je štandardne podporovaný) |
 | sshpass | Nutný pre automatizáciu (`brew install hudochenkov/sshpass/sshpass`) |
+| Home dir | Nie je `~` ale `/data/c/X/UUID/` |
+| Verejná IP | Zistiť cez `dig +short shell.rX.websupport.sk` (napr. `37.9.175.19X`) |
 
 **Poznámky:**
 - AddHandler v .htaccess pre PHP verziu **nefunguje** - Websupport používa PHP-FPM
 - Shell sa aktivuje v sekcii Konzola a má časový limit
 - Databázové mená a useri sú generované (napr. `7wAupgx9`)
+- Pri `sshpass` vždy použi `-T` flag: `sshpass -p 'HESLO' ssh -T -p PORT ...`
+- MySQL na Websupport hlási `Deprecated program name` warning (mariadb) - je to normálne, ignorovať
+- DB heslá často obsahujú špeciálne znaky → vždy použi `MYSQL_PWD` env premennú
 
 ## Verpex
 
@@ -27,14 +32,18 @@
 | SSH port | 22 |
 | Panel | cPanel |
 | Document root | `~/public_html/` |
-| DB host | `localhost` |
+| DB host | `localhost` alebo `localhost:3306` |
 | PHP verzia | MultiPHP Manager v cPanel, alebo `.htaccess` AddHandler |
 | SSH kľúče | Generovanie cez cPanel → SSH Access |
+| DB prefix v dumpe | cPanel generuje napr. `username_wp_xxxxx` formát |
 
 **Poznámky:**
 - SSH kľúč vygenerovaný v cPanel musí byť **autorizovaný** (Manage → Authorize)
-- Kľúč môže byť zašifrovaný passphrase - treba ssh-agent s expect
+- Kľúč je takmer vždy zašifrovaný passphrase → **vždy** použiť `expect` + `ssh-agent`
+- Passphrase ku kľúču býva rovnaké ako SSH heslo poskytnuté v cPanel
+- Stiahnutý kľúč z cPanel je často adresár obsahujúci `id_rsa`, nie priamo súbor
 - Server name formát: `sXXXX.fraX.stableserver.net`
+- WordPress pluginy (AIOWPSEC) pridávajú hardcoded cesty do `wp-config.php` → po migrácii opraviť
 
 ## Wedos
 
