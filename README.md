@@ -1,4 +1,4 @@
-# Rabbii Skills
+# Rabbio Skills
 
 Kolekcia [Cursor AI](https://cursor.com) skills od tímu [Rabbio Digital](https://rabbio.digital).
 
@@ -18,30 +18,30 @@ Skopíruj priečinok skillu do `~/.cursor/skills/`:
 
 ```bash
 # Naklonuj repo
-git clone https://github.com/rabbiodigital/rabbii-skills.git /tmp/rabbii-skills
+git clone https://github.com/rabbiodigital/rabbio-skills.git /tmp/rabbio-skills
 
 # Skopíruj konkrétny skill
-cp -r /tmp/rabbii-skills/web-hosting-migration ~/.cursor/skills/
+cp -r /tmp/rabbio-skills/web-hosting-migration ~/.cursor/skills/
 
 # Vyčisti
-rm -rf /tmp/rabbii-skills
+rm -rf /tmp/rabbio-skills
 ```
 
 ### Inštalácia všetkých skills
 
 ```bash
-git clone https://github.com/rabbiodigital/rabbii-skills.git /tmp/rabbii-skills
-cp -r /tmp/rabbii-skills/*/ ~/.cursor/skills/
-rm -rf /tmp/rabbii-skills
+git clone https://github.com/rabbiodigital/rabbio-skills.git /tmp/rabbio-skills
+cp -r /tmp/rabbio-skills/*/ ~/.cursor/skills/
+rm -rf /tmp/rabbio-skills
 ```
 
 ### Symlink (pre automatické aktualizácie)
 
 ```bash
-git clone https://github.com/rabbiodigital/rabbii-skills.git ~/rabbii-skills
+git clone https://github.com/rabbiodigital/rabbio-skills.git ~/rabbio-skills
 
 # Symlink konkrétneho skillu
-ln -s ~/rabbii-skills/web-hosting-migration ~/.cursor/skills/web-hosting-migration
+ln -s ~/rabbio-skills/web-hosting-migration ~/.cursor/skills/web-hosting-migration
 ```
 
 ## Štruktúra skillu
