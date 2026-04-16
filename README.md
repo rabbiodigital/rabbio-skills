@@ -9,6 +9,7 @@ Skills rozširujú schopnosti AI agenta v Cursor IDE o špecializované workflow
 | Skill | Popis |
 |-------|-------|
 | [web-hosting-migration](./web-hosting-migration/) | Migrácia webov medzi hostingami (PHP, Laravel, WordPress, static) |
+| [imapsync-migration](./imapsync-migration/) | Migrácia IMAP emailových schránok medzi hostingami cez `imapsync` (paralelne, s passfiles, post-MX resync) |
 | [session-end](./session-end/) | Vytvára development log záznam na konci pracovnej session |
 
 ## Inštalácia
